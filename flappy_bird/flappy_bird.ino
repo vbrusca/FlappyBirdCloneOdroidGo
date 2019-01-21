@@ -1,6 +1,8 @@
 // By Ponticelli Domenico.
-// Added to by: Victor G. Brusca
 // https://github.com/pcelli85/M5Stack_FlappyBird_game
+
+// Added to by: Victor G. Brusca
+// https://github.com/vbrusca/FlappyBirdCloneOdroidGo
 
 #include <odroid_go.h>
 #include <EEPROM.h>
@@ -16,7 +18,7 @@
 
 //game constants
 #define SPEED             1
-#define GRAVITY           5.25
+#define GRAVITY           4.25
 #define JUMP_FORCE        2.00
 
 //bird size
@@ -27,7 +29,7 @@
 
 //pip size
 #define PIPEW             24
-#define GAPHEIGHT         60
+int GAPHEIGHT = 70;
 
 //floor size
 #define FLOORH            30 //floor height from bottom of the screen
@@ -349,6 +351,7 @@ void update() {
     pipes.x = TFTW;
     GO.lcd.fillRect(0, TFT_Y_S, 10, GAMEH - TFT_Y_S, BCKGRDCOL);
     pipes.gap_y = random(10, (GAMEH - (10 + GAPHEIGHT)));
+    GAPHEIGHT = random(55, 75);    
     if((pipes.gap_y + GAPHEIGHT) >= (TFTH - FLOORH - TFT_Y_S)) {
       pipes.gap_y -= 40;
     }
