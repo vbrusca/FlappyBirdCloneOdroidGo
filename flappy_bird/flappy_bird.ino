@@ -18,18 +18,18 @@
 
 //game constants
 #define SPEED             1
-#define GRAVITY           4.25
-#define JUMP_FORCE        2.00
+#define GRAVITY           5.25
+#define JUMP_FORCE        2.50
 
 //bird size
 #define BIRDW             16
-#define BIRDH             16
+#define BIRDH             10
 #define BIRDW2            8
-#define BIRDH2            8
+#define BIRDH2            5
 
 //pip size
 #define PIPEW             24
-int GAPHEIGHT = 70;
+int GAPHEIGHT = 85; //65 - 85
 
 //floor size
 #define FLOORH            30 //floor height from bottom of the screen
@@ -65,17 +65,21 @@ const unsigned int GRASSCOL2 = GO.lcd.color565(156, 239, 88);
 #define C3 TFT_WHITE
 #define C4 TFT_RED
 #define C5 GO.lcd.color565(251, 216, 114)
+#define C6 TFT_BLACK
 
-static unsigned int birdcol[] = { 
-  C0, C0, C1, C1, C1, C1, C1, C0, C0, C0, C1, C1, C1, C1, C1, C0,
-  C0, C1, C2, C2, C2, C1, C3, C1, C0, C1, C2, C2, C2, C1, C3, C1,
-  C0, C2, C2, C2, C2, C1, C3, C1, C0, C2, C2, C2, C2, C1, C3, C1,
-  C1, C1, C1, C2, C2, C3, C1, C1, C1, C1, C1, C2, C2, C3, C1, C1,
-  C1, C2, C2, C2, C2, C2, C4, C4, C1, C2, C2, C2, C2, C2, C4, C4,
-  C1, C2, C2, C2, C1, C5, C4, C0, C1, C2, C2, C2, C1, C5, C4, C0,
-  C0, C1, C2, C1, C5, C5, C5, C0, C0, C1, C2, C1, C5, C5, C5, C0,
-  C0, C0, C1, C5, C5, C5, C0, C0, C0, C0, C1, C5, C5, C5, C0, C0
+static unsigned int birdcol[] = {
+  C0, C0, C0, C1, C1, C1, C1, C1, C1, C1, C1, C1, C1, C0, C0, C0,
+  C0, C0, C1, C1, C2, C2, C2, C2, C2, C2, C3, C3, C1, C1, C0, C0,
+  C0, C1, C1, C2, C2, C1, C2, C2, C2, C2, C3, C3, C4, C1, C1, C0,
+  C1, C1, C2, C2, C2, C2, C2, C2, C2, C2, C3, C3, C3, C1, C1, C0,
+  C1, C1, C2, C6, C6, C6, C6, C2, C2, C2, C4, C4, C4, C4, C4, C1,
+  C0, C5, C5, C2, C2, C2, C2, C2, C2, C4, C1, C1, C1, C1, C1, C1,
+  C0, C5, C5, C2, C6, C6, C6, C2, C2, C2, C4, C4, C4, C4, C1, C1,
+  C0, C5, C5, C2, C2, C2, C2, C2, C2, C2, C2, C2, C2, C2, C1, C1,
+  C0, C0, C5, C2, C2, C2, C2, C2, C2, C2, C2, C2, C2, C2, C1, C1,
+  C0, C0, C5, C5, C5, C5, C5, C5, C5, C5, C5, C5, C5, C1, C1, C0
 };
+
 
 static struct BIRD {
   long x, y, old_y;
@@ -91,8 +95,6 @@ static struct PIPES {
 
 int score;
 static short tmpx, tmpy;
-//#define drawPixel(a, b, c) GO.lcd.setAddrWindow(a, b, a, b); GO.lcd.pushColor(c)
-
 unsigned char GAMEH = TFTH - FLOORH - TFT_Y_S;
 long grassx;
 
@@ -109,10 +111,10 @@ bool gameEnd = false;
 
 bool gameCd = false;
 bool btnPressed = false;
-int targetFps = 30;
+int targetFps = 20;
 float actualFps;
 
-int targetFpsMs = 1000 / 30;
+int targetFpsMs = 1000 / targetFps;
 int lastFrameMs;
 int extraMs;
 double lstart;
@@ -127,11 +129,19 @@ long gameCdStart = 0;
 bool onCollision = true;
 bool onJump = true;
 bool onGravity = true;
+
 bool showActualFps = false;
 bool gamePause = false;
 float lastVelY = 0.0;
 long gamePauseStart;
 const int chipSelect = 7;
+
+//bool sdCardOn = false;
+//const int len = 8000;
+//uint8_t buff[len];
+//uint16_t rate = 1000;
+//File file;
+//int idx = 0;
 
 void setup() {
   gameInit();
@@ -145,10 +155,10 @@ void loop() {
         drawBird();
         drawGetReady();
     }else {
-      lstart = millis();
+      lstart = millis();      
 
       if(!gamePause) {
-        gameLoop();
+          gameLoop();
       }else {
         if((lstart - gamePauseStart) >= 2000) {
           gameEnd = true;
@@ -157,8 +167,8 @@ void loop() {
           return;
         }
       }
-      
-      GO.update();
+
+      GO.BtnB.read();
       lstop = millis();
       
       lastFrameMs = (lstop - lstart);
@@ -328,7 +338,7 @@ void update() {
   if(onJump) {
     if (!btnPressed && GO.BtnB.wasPressed()) {
       btnPressed = true;
-    }else if(btnPressed && GO.BtnB.wasReleased()) {
+    }else if(btnPressed) { // && GO.BtnB.wasReleased()) {
       btnPressed = false;
       //if the bird is not too close to the top of the screen apply jump force
       if (bird.y > BIRDH2 * 0.5) {
@@ -351,14 +361,14 @@ void update() {
     pipes.x = TFTW;
     GO.lcd.fillRect(0, TFT_Y_S, 10, GAMEH - TFT_Y_S, BCKGRDCOL);
     pipes.gap_y = random(10, (GAMEH - (10 + GAPHEIGHT)));
-    GAPHEIGHT = random(55, 75);    
+    GAPHEIGHT = random(55, 85);    
     if((pipes.gap_y + GAPHEIGHT) >= (TFTH - FLOORH - TFT_Y_S)) {
       pipes.gap_y -= 40;
     }
   }  
 
   //bird
-  if(onGravity && loops > 3) {
+  if(onGravity && loops >= 3) {
     bird.vel_y += (GRAVITY * delta);
     bird.y += bird.vel_y;
   }
@@ -368,17 +378,13 @@ void update() {
     if(bird.y + BIRDH >= GAMEH) {
       gamePause = true;
       gamePauseStart = millis();
-      //gameEnd = true;
-      //dirty = true;
     }
   
     //checking for bird collision with pipe
     if((bird.x + BIRDW) >= (pipes.x - BIRDW2) && bird.x <= (pipes.x + PIPEW - BIRDW)) {
       if(bird.y < (pipes.gap_y + TFT_Y_S) || (bird.y + BIRDH) > (pipes.gap_y + GAPHEIGHT)) {
-        //gameEnd = true;
         gamePause = true;
         gamePauseStart = millis();
-        //dirty = true;
       }else {
         passed_pipe = true;
       }
@@ -430,27 +436,21 @@ void gameStart() {
     GO.lcd.println("Middlemind Games");
 
     GO.lcd.setTextSize(2);
-    GO.Speaker.setVolume(1);
-    GO.Speaker.playMusic(m5stack_startup_music, 25000);
     GO.Speaker.mute();
   }
   
-  //while(1) {
-    //wait for push button
-    GO.update();
-    if(GO.BtnA.wasPressed()) {
-      gameBegin = false;
-      gameEnd = false;
-      gameCd = true;
-      gameCdStart = millis();
-      dirtyScore = true;
-      drawLevel();
-      GO.Speaker.mute();
-      //drawGetReady();
-      //dirtyScore = true;
-      //break;
-    }
-  //}  
+  //wait for push button
+  //GO.update();
+  GO.Speaker.mute();
+  silentUpdate();
+  if(GO.BtnA.wasPressed()) {
+    gameBegin = false;
+    gameEnd = false;
+    gameCd = true;
+    gameCdStart = millis();
+    dirtyScore = true;
+    drawLevel();
+  }
 }
 
 void gameInit() {
@@ -488,8 +488,6 @@ void gameInit() {
 
   dirty = true;
 
-  //const char file[] = "./flappybird/bg.wav";
-  //odroid_sdcard_open(file);
   /*
   Serial.print("Initializing SD card...");
   // see if the card is present and can be initialized:
@@ -499,19 +497,91 @@ void gameInit() {
     while (1);
   }
   Serial.println("card initialized.");
+  */
+
+  /*
+  uint8_t cardType = SD.cardType();
+  if(cardType == CARD_NONE){
+      Serial.println("No SD card attached");
+      return;
+  }
   
-  char *bg_music;
-  File file = SD.open("bg.wav");
-  if(file) {
-    size_t sz = file.readBytes(bg_music, file.size());
-    Serial.println("Found wav files bytes...");
-    //Serial.printf("%zu\n", x);
-    Serial.println((long)sz);
-  }else {
-    Serial.println("File not found.");
+  Serial.print("SD Card Type: ");
+  if(cardType == CARD_MMC){
+      Serial.println("MMC");
+  } else if(cardType == CARD_SD){
+      Serial.println("SDSC");
+  } else if(cardType == CARD_SDHC){
+      Serial.println("SDHC");
+  } else {
+      Serial.println("UNKNOWN");
   }
   */
+
+  /*
+  uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+  Serial.printf("SD Card Size: %lluMB\n", cardSize);
+
+  file = SD.open("/flappybird/bg.wav");
+  if(!file){
+    sdCardOn = false;
+    Serial.println("Failed to open file for reading");
+    //return;
+  }else {
+    sdCardOn = true;
+    Serial.println("Found file");
+    Serial.println(file.size());
+    //file.read(buff, sizeof(buff));
+  }
+  //file.close();
+  
+  //Serial.printf("BBB");
+  GO.Speaker.setVolume(1);
+  //uint16_t rate = 8000;
+  //GO.Speaker.playMusic(buff, rate);
+  */
 }
+
+/*
+void readWavFile(fs::FS &fs, const char *path, uint8_t *buff){
+  Serial.printf("Reading file: %s\n", path);
+  File file = fs.open(path);
+  if(!file){
+    Serial.println("Failed to open file for reading");
+    return;
+  }else {
+    Serial.println("Found file");
+    //Serial.println(file.size());
+  }
+
+  Serial.print("Read from file: ");
+  //file.read(buff, sizeof(buff));
+  file.close();
+}
+
+void readFile(fs::FS &fs, const char * path){
+  Serial.printf("Reading file: %s\n", path);
+
+  File file = fs.open(path);
+  if(!file){
+    Serial.println("Failed to open file for reading");
+    return;
+  }
+
+  Serial.print("Read from file: ");
+  while(file.available()){
+    Serial.write(file.read());
+  }
+  file.close();
+}
+*/
+
+void silentUpdate() {
+    //Button update
+    GO.BtnA.read();
+    GO.BtnB.read();
+}
+
 
 void gameOver() {
   if(dirty) {
@@ -544,26 +614,29 @@ void gameOver() {
     GO.lcd.setCursor(10, 28);
     GO.lcd.print("Max Score: ");
     GO.lcd.print(maxScore);
+
+    GO.Speaker.mute();    
   }
 
-  //while(1) {
-    //wait for push button
-    GO.update();
-    if(GO.BtnA.wasPressed()) {
-      gameEnd = false;
-      gameBegin = true;
-      dirtyScore = true;
-      lstart = millis();
-      gameInit();
-      //break;  
-    }
-  //}
+  //wait for push button
+  //GO.update();
+  GO.Speaker.mute();
+  silentUpdate();
+  if(GO.BtnA.wasPressed()) {
+    gameEnd = false;
+    gameBegin = true;
+    dirtyScore = true;
+    lstart = millis();
+    gameInit();
+    //break;  
+  }
 }
 
 void resetMaxScore() {
   EEPROM_Write(&maxScore, 0);
 }
 
+/*
 void EEPROM_Write(int *num, int memPos) {
   byte ByteArray[2];
   memcpy(ByteArray, num, 2);
@@ -577,3 +650,4 @@ void EEPROM_Read(int *num, int memPos) {
   ByteArray[1] = EEPROM.read((memPos * 2) + 1);
   memcpy(num, ByteArray, 2);  
 }
+*/
